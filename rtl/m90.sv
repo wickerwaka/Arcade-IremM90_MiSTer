@@ -1,5 +1,5 @@
 //============================================================================
-//  Irem M92 for MiSTer FPGA - Main module
+//  Irem M90 for MiSTer FPGA - Main module
 //
 //  Copyright (C) 2023 Martin Donlon
 //
@@ -18,9 +18,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-import m92_pkg::*;
+import m90_pkg::*;
 
-module m92 (
+module m90 (
     input clk_sys,
     input clk_ram,
 
@@ -290,7 +290,7 @@ wire [7:0] switches_p4 = board_cfg.kick_harness ? { p2_input[9], p2_input[8], p2
 
 wire [15:0] switches_p1_p2 = { ~switches_p2, ~switches_p1 };
 
-`ifdef M92_DEBUG_IO
+`ifdef M90_DEBUG_IO
 wire [15:0] switches_p3_p4 = { dbg_io_latch, dbg_io_latch };
 `else
 wire [15:0] switches_p3_p4 = { ~switches_p4, ~switches_p3 };
@@ -422,7 +422,7 @@ address_translator address_translator(
 
 wire vblank, hblank, vsync, hsync, vpulse, hpulse, hint;
 
-m92_pic m92_pic(
+m90_pic m90_pic(
     .clk(clk_sys),
     .ce(ce_cpu),
     .reset(~reset_n),
