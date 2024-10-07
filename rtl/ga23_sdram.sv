@@ -16,7 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-import m92_pkg::*;
+import board_pkg::*;
 
 module ga23_sdram(
     input clk,

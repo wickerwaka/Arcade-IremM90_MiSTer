@@ -78,3 +78,4 @@ fp-info-cache
 # Lints
 work/
 _hdl_checker/
+.sv_cache/

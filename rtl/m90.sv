@@ -1,5 +1,5 @@
 //============================================================================
-//  Irem M92 for MiSTer FPGA - Main module
+//  Irem M90 for MiSTer FPGA - Main module
 //
 //  Copyright (C) 2023 Martin Donlon
 //
@@ -18,9 +18,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-import m92_pkg::*;
+import board_pkg::*;
 
-module m92 (
+module m90 (
     input clk_sys,
     input clk_ram,
 
@@ -412,7 +412,7 @@ address_translator address_translator(
 
 wire vblank, hblank, vsync, hsync, vpulse, hpulse, hint;
 
-m92_pic m92_pic(
+irem_pic irem_pic(
     .clk(clk_sys),
     .ce(ce_1_cpu),
     .reset(~reset_n),
