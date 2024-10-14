@@ -1,0 +1,4 @@
+[submodule "rtl/nec_core"]
+	path = rtl/nec_core
+	url = https://github.com/wickerwaka/nec_core.git
+	branch = v35
