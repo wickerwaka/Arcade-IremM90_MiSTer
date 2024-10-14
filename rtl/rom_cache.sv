@@ -56,7 +56,7 @@ always_ff @(posedge clk) begin
         state <= IDLE;
         if (~prev_reset) version <= version + 2'd1;
     end else if (ce_1 | ce_2) begin
-        if (ce_1 & ~n_bcyst & read) begin
+        if (ce_1 && read && state == IDLE) begin
             state <= CACHE_CHECK;
         end else if (ce_2 && state == CACHE_CHECK) begin
             if (cached_tag == tag) begin

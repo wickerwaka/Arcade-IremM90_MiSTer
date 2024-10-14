@@ -94,7 +94,7 @@ set_global_assignment -name VERILOG_MACRO "MISTER_DISABLE_ADAPTIVE=1"
 #set_global_assignment -name VERILOG_MACRO "MISTER_SMALL_VBUF=1"
 
 source sys/sys.tcl
-ource sys/sys_analog.tcl
+source sys/sys_analog.tcl
 source files.qip
 set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
 

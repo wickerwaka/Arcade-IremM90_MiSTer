@@ -3,7 +3,6 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/board_pkg.sv
 set_global_assignment -name SDC_FILE Arcade-IremM90.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE Arcade-IremM90.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/mame_keys.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/eeprom.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dpramv.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/rom.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/pal.sv
@@ -11,16 +10,10 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/sdram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/jtframe_frac_cen.v
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/jtframe_resync.v
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/pause.v
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/irem_pic.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga21.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga22.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga22_linebuffer.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga23.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga25.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga23_sdram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga23_shifter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga23_layer.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/objram.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/palram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/sound.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga20.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ga20_cache.sv
@@ -28,14 +21,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/hiscore.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/rom_cache.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/vshrink.sv
 
-set_global_assignment -name QIP_FILE rtl/nec_core/v33.qip
-
-set_global_assignment -name VHDL_FILE rtl/v30/cpu.vhd
-set_global_assignment -name VHDL_FILE rtl/v30/divider.vhd
-
-set_global_assignment -name VHDL_FILE rtl/v35/core.vhd
-set_global_assignment -name VHDL_FILE rtl/v35/divider.vhd
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/v35/v35.sv
+set_global_assignment -name QIP_FILE rtl/nec_core/hdl/v35.qip
 
 set_global_assignment -name QIP_FILE rtl/jt51/jt51.qip
 

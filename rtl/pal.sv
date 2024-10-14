@@ -33,12 +33,8 @@ module address_translator
     output cpu_rom_memrq,
     output cpu_ram_memrq,
 
-    output buffer_memrq,
-    output sprite_control_memrq,
-    output video_control_memrq,
-    output pf_vram_memrq,
-	output eeprom_memrq,
-	output timer_memrq
+    output ga25_memrq,
+    output palram_memrq
 );
 
 wire [3:0] bank_a19_16 = ( bank_select & board_cfg.bank_mask ) | ( A[19:16] & ~board_cfg.bank_mask );
@@ -48,40 +44,24 @@ always_comb begin
     cpu_rom_memrq = 0;
     rom_addr = 0;
 
-    buffer_memrq = 0;
-    sprite_control_memrq = 0;
-    video_control_memrq = 0;
-    pf_vram_memrq = 0;
-	eeprom_memrq = 0;
-	timer_memrq = 0;
+    ga25_memrq = 0;
+	palram_memrq = 0;
 
 	casex (A[19:0])
-	// 0xc0000-0xcffff
-	20'b1100_xxxx_xxxx_xxxx_xxxx: begin cpu_rom_memrq = 1; rom_addr = { 4'b0, A[15:0] }; end
+	// 0x80000-0x8ffff
+	20'b1000_xxxx_xxxx_xxxx_xxxx: begin
+		cpu_rom_memrq = 1;
+		rom_addr = { bank_a19_16, A[15:0] }; // TODO verify
+	end
 	// 0xd0000-0xdffff
-	20'b1101_xxxx_xxxx_xxxx_xxxx: pf_vram_memrq = 1;
+	20'b1101_xxxx_xxxx_xxxx_xxxx: ga25_memrq = 1;
+	// 0xa0000-0xaffff
+	20'b1010_xxxx_xxxx_xxxx_xxxx: cpu_ram_memrq = 1;
 	// 0xe0000-0xeffff
-	20'b1110_xxxx_xxxx_xxxx_xxxx: begin cpu_ram_memrq = 1; end
-	// 0xf0000-0xf3fff
-	20'b1111_00xx_xxxx_xxxx_xxxx: eeprom_memrq = 1;
-	// 0xf8000-0xf87ff
-	20'b1111_1000_xxxx_xxxx_xxxx: buffer_memrq = 1;
-	// 0xf9000-0xf900f
-	20'b1111_1001_0000_0000_xxxx: sprite_control_memrq = 1;
-	// 0xf9800-0xf9801
-	20'b1111_1001_1000_0000_000x: video_control_memrq = 1;
-	// 0xffff0-0xfffff
-	20'b1111_1111_1111_1111_xxxx: begin cpu_rom_memrq = 1; rom_addr = { 16'h7fff, A[3:0] }; end
-	// 0x00000-0xbffff
+	20'b1110_xxxx_xxxx_xxxx_xxxx: palram_memrq = 1;
 	default: begin
-		if (board_cfg.alt_map && A[19:16] == 4'h8) begin
-			pf_vram_memrq = 1;
-		end else if (board_cfg.debug_board && A[19:16] == 4'hb) begin
-			timer_memrq = 1;
-		end else begin
-			cpu_rom_memrq = 1;
-			rom_addr = { A[19:17] == 3'b101 ? bank_a19_16 : A[19:16], A[15:0] };
-		end
+		cpu_rom_memrq = 1;
+		rom_addr = { 1'h0, A[18:0] };
 	end
 	endcase
 end

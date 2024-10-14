@@ -125,11 +125,11 @@ assign cpu_paused = paused;
 
 always @(posedge clk_sys) begin
     if (pause_rq & ~paused) begin
-        if (vpulse) begin
+        if (vsync) begin
             paused <= 1;
         end
     end else if (~pause_rq & paused) begin
-        paused <= ~vpulse;
+        paused <= ~vsync;
     end
 end
 
@@ -164,15 +164,15 @@ wire [19:0] cpu_mem_addr;
 wire [15:0] cpu_mem_in;
 
 /* Global signals from schematics */
-wire cpu_n_dstb, cpu_busst0, cpu_busst1, cpu_n_bcyst;
-wire cpu_n_ube, cpu_r_w, cpu_m_io;
+wire cpu_n_mreq, cpu_n_mstb, cpu_n_intak;
+wire cpu_n_ube, cpu_r_w, cpu_n_iostb;
 
-wire IOWR = ~cpu_m_io & ~cpu_r_w & ~cpu_busst1 & cpu_busst0 & ~cpu_n_dstb; // IO Write
-wire IORD = ~cpu_m_io & cpu_r_w & ~cpu_busst1 & cpu_busst0; // IO Read
-wire MWR = cpu_m_io & ~cpu_r_w & ~cpu_busst1 & cpu_busst0 & ~cpu_n_dstb; // Mem Write
-wire MRD = cpu_m_io & cpu_r_w & ~cpu_busst1; // Mem Read
+wire IOWR = ~cpu_n_iostb & ~cpu_r_w; // IO Write
+wire IORD = ~cpu_n_iostb & cpu_r_w; // IO Read
+wire MWR = ~cpu_n_mreq & ~cpu_n_mstb & ~cpu_r_w; // Mem Write
+wire MRD = ~cpu_n_mreq & cpu_r_w; // Mem Read
 
-wire INTACK = ~cpu_m_io & cpu_r_w & ~cpu_busst1 & ~cpu_busst0 & ~cpu_n_dstb;
+wire INTACK = ~cpu_n_intak;
 
 wire [19:0] cpu_word_addr = { cpu_mem_addr[19:1], 1'b0 };
 wire [15:0] cpu_rom_data;
@@ -181,13 +181,8 @@ wire [19:0] cpu_rom_addr;
 
 wire cpu_rom_memrq;
 wire cpu_ram_memrq;
-wire buffer_memrq;
-wire sprite_control_memrq;
-wire video_control_memrq;
-wire pf_vram_memrq;
-wire eeprom_memrq;
-wire banked_memrq;
-wire timer_memrq;
+wire ga25_memrq;
+wire palram_memrq;
 
 wire [7:0] snd_latch_dout;
 wire snd_latch_rdy;
@@ -196,7 +191,7 @@ reg [15:0] cpu_cycle_timer;
 reg [15:0] deferred_ce;
 reg ce_toggle;
 reg ce_1, ce_2;
-wire ga23_busy;
+wire ga25_busy;
 wire cpu_rom_ready;
 
 wire ce_1_cpu = ce_1 & cpu_rom_ready;
@@ -264,7 +259,6 @@ rom_cache rom_cache(
     .sdr_req(sdr_cpu_req),
     .sdr_rdy(sdr_cpu_rdy),
 
-    .n_bcyst(cpu_n_bcyst),
     .read(MRD & cpu_rom_memrq),
     .rom_word_addr(cpu_rom_addr[19:1]),
     .rom_data(cpu_rom_data),
@@ -304,40 +298,21 @@ reg sound_reset = 0;
 // TODO BANK, CBLK, NL
 always @(posedge clk_sys) begin
     if (~reset_n) begin
-        sys_flags <= 8'd0;
         bank_select <= 4'd0;
-        sound_reset <= 1'd0;
     end else begin
-        if (IOWR && cpu_word_addr == 8'h02) sys_flags <= cpu_mem_out[7:0];
-        if (IOWR && cpu_word_addr == 8'h20) bank_select <= cpu_mem_out[3:0];
-        if (IOWR && cpu_word_addr == 8'hc0) sound_reset <= ~cpu_mem_out[0];
+        if (IOWR && cpu_word_addr == 8'h04) bank_select <= cpu_mem_out[3:0];
     end
 end
 
-reg [15:0] vid_ctrl;
-always @(posedge clk_sys or negedge reset_n) begin
-    if (~reset_n) begin
-        vid_ctrl <= 0;
-    end else if (video_control_memrq & MWR) begin
-        vid_ctrl <= cpu_mem_out;
-    end
-end
-
-wire [15:0] ga21_dout, ga23_dout;
-wire [7:0] eeprom_dout;
+wire [15:0] ga25_dout, palram_dout;
 
 // mux io and memory reads
 always_comb begin
-    bit [15:0] d16;
-    bit [15:0] io16;
-
     if (INTACK) begin
         cpu_mem_in = { 8'd0, int_vector };
     end else if (MRD) begin
-        if (buffer_memrq) cpu_mem_in = ga21_dout;
-        else if (pf_vram_memrq) cpu_mem_in = ga23_dout;
-        else if (eeprom_memrq) cpu_mem_in = { eeprom_dout, eeprom_dout };
-        else if (timer_memrq) cpu_mem_in = cpu_cycle_timer;
+        if (ga25_memrq) cpu_mem_in = ga25_dout;
+        else if (palram_memrq) cpu_mem_in = palram_dout;
         else if (cpu_rom_memrq) cpu_mem_in = cpu_rom_data;
         else cpu_mem_in = cpu_ram_dout;
     end else if (IORD) begin
@@ -346,7 +321,6 @@ always_comb begin
         8'h02: cpu_mem_in = flags;
         8'h04: cpu_mem_in = ~dip_sw[15:0];
         8'h06: cpu_mem_in = switches_p3_p4;
-        8'h08: cpu_mem_in = { snd_latch_dout, snd_latch_dout };
         default: cpu_mem_in = 16'hffff;
         endcase
     end else begin
@@ -357,34 +331,28 @@ end
 wire int_req;
 wire [7:0] int_vector;
 
-V33 v33(
+V33 v35(
     .clk(clk_sys),
     .ce_1(ce_1_cpu),
     .ce_2(ce_2_cpu),
 
     // Pins
-    .reset(~reset_n),
-    .hldrq(0),
-    .n_ready(ga23_busy),
-    .bs16(0),
+    .n_reset(reset_n),
+    .ready(~ga25_busy), // TODO
+    .n_poll(1),
 
-    .hldak(),
-    .n_buslock(),
     .n_ube(cpu_n_ube),
     .r_w(cpu_r_w),
-    .m_io(cpu_m_io),
-    .busst0(cpu_busst0),
-    .busst1(cpu_busst1),
-    .aex(),
-    .n_bcyst(cpu_n_bcyst),
-    .n_dstb(cpu_n_dstb),
+    .n_iostb(cpu_n_iostb),
+    .n_mstb(cpu_n_mstb),
+    .n_mreq(cpu_n_mreq),
 
-    .intreq(int_req),
-    .n_nmi(1),
+    .intreq(0),
+    .nmi(0),
 
-    .n_cpbusy(1),
-    .n_cperr(1),
-    .cpreq(0),
+    .n_intp0(1),
+    .n_intp1(1),
+    .n_intp2(1),
 
     .addr(cpu_mem_addr),
     .dout(cpu_mem_out),
@@ -400,197 +368,31 @@ address_translator address_translator(
     .cpu_ram_memrq(cpu_ram_memrq),
     .rom_addr(cpu_rom_addr),
 
-    .buffer_memrq,
-    .sprite_control_memrq,
-    .video_control_memrq,
-    .pf_vram_memrq,
-    .eeprom_memrq,
-    .timer_memrq,
+    .ga25_memrq,
+    .palram_memrq,
 
     .bank_select
 );
 
-wire vblank, hblank, vsync, hsync, vpulse, hpulse, hint;
-
-irem_pic irem_pic(
-    .clk(clk_sys),
-    .ce(ce_1_cpu),
-    .reset(~reset_n),
-
-    .cs((IORD | IOWR) & ~cpu_mem_addr[7] & cpu_mem_addr[6] & ~cpu_mem_addr[0]), // 0x40-0x43
-    .wr(IOWR),
-    .rd(0),
-    .a0(cpu_mem_addr[1]),
-    
-    .din(cpu_mem_out[7:0]),
-
-    .int_req(int_req),
-    .int_vector(int_vector),
-    .int_ack(INTACK),
-
-    .intp({4'd0, snd_latch_rdy, hint, ~dma_busy, vblank})
-);
-
+wire vblank, hblank, vsync, hsync, hint;
 
 assign HSync = hsync;
 assign HBlank = hblank;
 assign VSync = vsync;
 assign VBlank = vblank;
 
-wire objram_we;
-wire [15:0] objram_data, objram_q;
-wire [63:0] objram_q64;
-wire [10:0] objram_addr;
+wire [10:0] ga25_color;
 
-wire [11:0] ga22_color, ga23_color;
-wire ga23_prio;
-
-objram objram(
-    .clk(clk_sys),
-
-    .addr(objram_addr),
-    .we(objram_we),
-
-    .data(objram_data),
-
-    .q(objram_q),
-    .q64(objram_q64)
-);
-
-wire bufram_we;
-wire [15:0] bufram_data;
-wire [15:0] bufram_q00, bufram_q01, bufram_q10, bufram_q11;
-wire [10:0] bufram_addr;
-
-wire [1:0] bufram_cs =  ( ~bufram_addr[10] & ~dma_busy ) ? { 1'b0,        vid_ctrl[0] } :
-                        (  bufram_addr[10] & ~dma_busy ) ? { vid_ctrl[2], vid_ctrl[1] } :
-                        ( ~bufram_addr[10] &  dma_busy ) ? { 1'b0,        vid_ctrl[3] } :
-                        (  bufram_addr[10] &  dma_busy ) ? { vid_ctrl[5], vid_ctrl[4] } : 2'b00;
-
-wire [15:0] bufram_q;
-
-wire [12:0] ga21_palram_addr;
-wire ga21_palram_we, ga21_palram_cs;
-wire [15:0] ga21_palram_dout;
-wire [15:0] palram_q;
-wire [10:0] ga22_count;
-
-
-
-singleport_unreg_ram #(.widthad(13), .width(16), .name("BUFRAM")) bufram(
+singleport_ram #(.widthad(11), .width(16), .name("PALRAM")) palram(
     .clock(clk_sys),
-    .address({bufram_cs, bufram_addr}),
-    .q(bufram_q),
-    .wren(bufram_we),
-    .data(bufram_data)
+    .address(palram_memrq ? cpu_mem_addr[11:1] : ga25_color),
+    .q(palram_dout),
+    .wren(MWR & palram_memrq),
+    .data(cpu_mem_out)
 );
 
-palram palram(
-    .clk(clk_sys),
 
-    .ce_pix(ce_pix),
-
-    .vid_ctrl(vid_ctrl),
-    .dma_busy(dma_busy),
-
-    .cpu_addr(cpu_mem_addr[10:1]),
-
-    .ga21_addr(ga21_palram_addr),
-    .ga21_we(ga21_palram_we),
-    .ga21_req(ga21_palram_cs),
-    
-    .obj_color(ga22_color[10:0]),
-    .obj_prio(ga22_color[11]),
-    .obj_active(|ga22_color[3:0]),
-
-    .pf_color(ga23_color),
-    .pf_prio(~ga23_prio),
-
-    .din(ga21_palram_dout),
-    .dout(palram_q),
-
-    .rgb_out(rgb_color)
-);
-
-GA21 ga21(
-    .clk(clk_sys),
-    .ce(ce_9m),
-
-    .reset(),
-
-    .din(cpu_mem_out),
-    .dout(ga21_dout),
-
-    .addr(cpu_mem_addr[11:1]),
-
-    .reg_cs(sprite_control_memrq),
-    .buf_cs(buffer_memrq),
-    .wr(MWR),
-
-    .busy(dma_busy),
-
-    .obj_dout(objram_data),
-    .obj_din(objram_q),
-    .obj_addr(objram_addr),
-    .obj_we(objram_we),
-
-    .buffer_dout(bufram_data),
-    .buffer_din(bufram_q),
-    .buffer_addr(bufram_addr),
-    .buffer_we(bufram_we),
-
-    .count(ga22_count),
-
-    .pal_addr(ga21_palram_addr),
-    .pal_dout(ga21_palram_dout),
-    .pal_din(palram_q),
-    .pal_we(ga21_palram_we),
-    .pal_cs(ga21_palram_cs)
-);
-
-GA22 ga22(
-    .clk(clk_sys),
-    .clk_ram(clk_ram),
-
-    .ce(ce_13m), // 13.33Mhz
-
-    .ce_pix(ce_pix), // 6.66Mhz
-
-    .reset(~reset_n),
-
-    .color(ga22_color),
-
-    .NL(NL),
-    .hpulse(hpulse),
-    .vpulse(vpulse),
-
-    .count(ga22_count),
-
-    .obj_in(objram_q64),
-
-    .sdr_data(sdr_sprite_dout),
-    .sdr_addr(sdr_sprite_addr),
-    .sdr_req(sdr_sprite_req),
-    .sdr_rdy(sdr_sprite_rdy),
-    .sdr_refresh(sdr_sprite_refresh),
-
-    .dbg_solid_sprites(dbg_solid_sprites)
-);
-
-wire [14:0] vram_addr;
-wire [15:0] vram_data, vram_q;
-wire vram_we;
-
-singleport_unreg_ram #(.widthad(15), .width(16), .name("VRAM")) vram
-(
-    .clock(clk_sys),
-    .address(vram_addr),
-    .q(vram_q),
-    .wren(vram_we),
-    .data(vram_data)
-);
-
-GA23 ga23(
+GA25 ga25(
     .clk(clk_sys),
     .clk_ram(clk_ram),
 
@@ -600,24 +402,19 @@ GA23 ga23(
 
     .paused(paused),
 
-    .mem_cs(pf_vram_memrq),
+    .mem_cs(ga25_memrq),
     .mem_wr(MWR),
     .mem_rd(MRD),
     .io_wr(IOWR),
 
-    .busy(ga23_busy),
+    .busy(ga25_busy),
 
     .addr(cpu_mem_addr),
     .cpu_din(cpu_mem_out),
-    .cpu_dout(ga23_dout),
+    .cpu_dout(ga25_dout),
     
-    .vram_addr(vram_addr),
-    .vram_din(vram_q),
-    .vram_dout(vram_data),
-    .vram_we(vram_we),
 
     .NL(NL),
-    .large_tileset(board_cfg.large_tileset),
 
     .sdr_data(sdr_bg_dout),
     .sdr_addr(sdr_bg_addr),
@@ -628,13 +425,10 @@ GA23 ga23(
     .hblank(hblank),
     .vsync(vsync),
     .hsync(hsync),
-    .hpulse(hpulse),
-    .vpulse(vpulse),
 
     .hint(hint),
 
-    .color_out(ga23_color),
-    .prio_out(ga23_prio),
+    .color_out(ga25_color),
 
     .dbg_en_layers(dbg_en_layers)
 );
@@ -674,30 +468,5 @@ sound sound(
 
 assign AUDIO_L = sound_sample;
 assign AUDIO_R = sound_sample;
-
-eeprom_28C64 eeprom(
-    .clk(clk_sys),
-    .reset(~reset_n),
-    .ce(1),
-    
-    .rd(MRD & eeprom_memrq),
-    .wr(MWR & eeprom_memrq),
-
-    .addr(cpu_mem_addr[13:1]),
-    .q(eeprom_dout),
-    .data(cpu_mem_out[7:0]),
-
-    .ready(),
-
-    .modified(ioctl_upload_req),
-    .ioctl_download(ioctl_download && (ioctl_index == 'd1)),
-	.ioctl_wr(ioctl_wr),
-	.ioctl_addr(ioctl_addr[12:0]),
-	.ioctl_dout(ioctl_dout),
-	
-    .ioctl_upload(ioctl_upload && (ioctl_index == 'd1)),
-	.ioctl_din(ioctl_din),
-	.ioctl_rd(ioctl_rd)
-);
 
 endmodule

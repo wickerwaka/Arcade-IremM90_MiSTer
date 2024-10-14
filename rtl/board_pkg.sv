@@ -26,32 +26,23 @@ package board_pkg;
         bit [4:0] bram_cs;
     } region_t;
 
-    parameter region_t REGION_CPU_ROM = '{ base_addr:'h000_0000, reorder_64:0, bram_cs:5'b00000 };
-    parameter region_t REGION_CPU_RAM = '{ base_addr:'h010_0000, reorder_64:0, bram_cs:5'b00000 };
-    parameter region_t REGION_SOUND =   '{ base_addr:'h000_0000, reorder_64:0, bram_cs:5'b00010 };
-    parameter region_t REGION_GA20 =    '{ base_addr:'h030_0000, reorder_64:0, bram_cs:5'b00000 };
-    parameter region_t REGION_SPRITE =  '{ base_addr:'h040_0000, reorder_64:1, bram_cs:5'b00000 };
-    parameter region_t REGION_TILE =    '{ base_addr:'h0c0_0000, reorder_64:0, bram_cs:5'b00000 };
-    parameter region_t REGION_CRYPT =   '{ base_addr:'h000_0000, reorder_64:0, bram_cs:5'b00001 };
-    parameter region_t REGION_WIDE_SPRITE =  '{ base_addr:'h040_0000, reorder_64:0, bram_cs:5'b00000 };
+    parameter region_t REGION_CPU_ROM       = '{ base_addr:'h000_0000, reorder_64:0, bram_cs:5'b00000 };
+    parameter region_t REGION_CPU_RAM       = '{ base_addr:'h010_0000, reorder_64:0, bram_cs:5'b00000 };
+    parameter region_t REGION_SOUND_SAMPLES = '{ base_addr:'h030_0000, reorder_64:0, bram_cs:5'b00000 };
+    parameter region_t REGION_GFX           = '{ base_addr:'h040_0000, reorder_64:0, bram_cs:5'b00000 };
+    parameter region_t REGION_CRYPT         = '{ base_addr:'h000_0000, reorder_64:0, bram_cs:5'b00001 };
+    parameter region_t REGION_SOUND_CPU     = '{ base_addr:'h000_0000, reorder_64:0, bram_cs:5'b00010 };
 
-    parameter region_t LOAD_REGIONS[7] = '{
+    parameter region_t LOAD_REGIONS[5] = '{
         REGION_CPU_ROM,
-        REGION_TILE,
-        REGION_SPRITE,
-        REGION_SOUND,
-        REGION_CRYPT,
-        REGION_GA20,
-        REGION_WIDE_SPRITE
+        REGION_SOUND_CPU,
+        REGION_GFX,
+        REGION_SOUND_SAMPLES,
+        REGION_CRYPT
     };
 
-    
     typedef struct packed {
         bit       debug_board;
-        bit       large_tileset;
-        bit       kick_harness;
-        bit       wide_sprites;
-        bit       alt_map;
         bit [3:0] bank_mask;
     } board_cfg_t;
 endpackage
