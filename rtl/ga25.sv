@@ -59,8 +59,8 @@ module GA25(
 
 // VRAM
 reg [14:0] vram_addr;
-wire [15:0] vram_data;
-reg [15:0] vram_q;
+reg [15:0] vram_data;
+wire [15:0] vram_q;
 reg vram_we;
 
 singleport_ram #(.widthad(15), .width(16), .name("VRAM")) vram(
@@ -101,10 +101,10 @@ always_ff @(posedge clk) begin
     end
 end
 
-wire [21:0] rom_addr[3];
-wire [31:0] rom_data[3];
-wire        rom_req[3];
-wire        rom_rdy[3];
+wire [21:0] rom_addr[2];
+wire [31:0] rom_data[2];
+wire        rom_req[2];
+wire        rom_rdy[2];
 
 ga23_sdram sdram(
     .clk(clk),
@@ -120,10 +120,10 @@ ga23_sdram sdram(
     .req_b(rom_req[1]),
     .rdy_b(rom_rdy[1]),
 
-    .addr_c(rom_addr[2]),
-    .data_c(rom_data[2]),
-    .req_c(rom_req[2]),
-    .rdy_c(rom_rdy[2]),
+    .addr_c(0),
+    .data_c(),
+    .req_c(0),
+    .rdy_c(),
 
     .sdr_addr(sdr_addr),
     .sdr_data(sdr_data),
@@ -136,14 +136,14 @@ reg [2:0] mem_cyc;
 reg [3:0] rs_cyc;
 reg busy_we;
 
-reg [9:0] x_ofs[3], y_ofs[3];
-reg [7:0] control[3];
-reg [9:0] rowscroll[3];
+reg [9:0] x_ofs[2], y_ofs[2];
+reg [7:0] control[2];
+reg [9:0] rowscroll[2];
 
-wire [14:0] layer_vram_addr[3];
-reg layer_load[3];
-wire layer_prio[3];
-wire [10:0] layer_color[3];
+wire [14:0] layer_vram_addr[2];
+reg layer_load[2];
+wire layer_prio[2];
+wire [7:0] layer_color[2];
 reg [15:0] vram_latch;
 
 reg [1:0] cpu_access_st;
@@ -151,9 +151,8 @@ reg cpu_access_we;
 
 reg [37:0] control_save_0[512];
 reg [37:0] control_save_1[512];
-reg [37:0] control_save_2[512];
 
-reg [37:0] control_restore[3];
+reg [37:0] control_restore[2];
 
 reg rowscroll_active, rowscroll_pending;
 
@@ -168,9 +167,9 @@ always_ff @(posedge clk) begin
         vram_we <= 0;
         
         // layer regs
-        x_ofs[0] <= 10'd0; x_ofs[1] <= 10'd0; x_ofs[2] <= 10'd0;
-        y_ofs[0] <= 10'd0; y_ofs[1] <= 10'd0; y_ofs[2] <= 10'd0;
-        control[0] <= 8'd0; control[1] <= 8'd0; control[2] <= 8'd0;
+        x_ofs[0] <= 10'd0; x_ofs[1] <= 10'd0;
+        y_ofs[0] <= 10'd0; y_ofs[1] <= 10'd0;
+        control[0] <= 8'd0; control[1] <= 8'd0;
         hint_line <= 10'd0;
 
         rowscroll_pending <= 0;
@@ -186,7 +185,7 @@ always_ff @(posedge clk) begin
         vram_we <= 0;
 
         if (ce) begin
-            layer_load[0] <= 0; layer_load[1] <= 0; layer_load[2] <= 0;
+            layer_load[0] <= 0; layer_load[1] <= 0;
             mem_cyc <= mem_cyc + 3'd1;
 
             if (hpulse) begin
@@ -209,10 +208,8 @@ always_ff @(posedge clk) begin
                 end
                 10: rowscroll[1] <= vram_q[9:0];
                 12: begin
-                    rs_y = y_ofs[2] + VE;
                     vram_addr <= 'h7e00 + rs_y[8:0];
                 end
-                14: rowscroll[2] <= vram_q[9:0];
                 15: rowscroll_active <= 0;
                 endcase
                 
@@ -236,12 +233,8 @@ always_ff @(posedge clk) begin
                     layer_load[1] <= 1;
                 end
                 3'd4: begin
-                    vram_addr <= layer_vram_addr[2];
                 end
                 3'd5: begin
-                    vram_addr[0] <= 1;
-                    vram_latch <= vram_q;
-                    layer_load[2] <= 1;
                 end
                 3'd6: begin
                     if (cpu_access_st == 2'd1) begin
@@ -269,28 +262,22 @@ always_ff @(posedge clk) begin
 
             //prio_out <= layer_prio[0] | layer_prio[1] | layer_prio[2];
             if (|layer_color[0][3:0]) begin
-                color_out <= layer_color[0];
-            end else if (|layer_color[1][3:0]) begin
-                color_out <= layer_color[1];
+                color_out <= {3'b0, layer_color[0] };
             end else begin
-                color_out <= layer_color[2];
+                color_out <= {3'b0, layer_color[1] };
             end
         end
 
         if (io_wr) begin
             case(addr[7:0])
-            'h80: y_ofs[0][9:0] <= cpu_din[9:0];
-            'h84: x_ofs[0][9:0] <= cpu_din[9:0];
+            'h80: x_ofs[0][9:0] <= cpu_din[9:0];
+            'h82: y_ofs[0][9:0] <= cpu_din[9:0];
             
-            'h88: y_ofs[1][9:0] <= cpu_din[9:0];
-            'h8c: x_ofs[1][9:0] <= cpu_din[9:0];
+            'h84: x_ofs[1][9:0] <= cpu_din[9:0];
+            'h86: y_ofs[1][9:0] <= cpu_din[9:0];
             
-            'h90: y_ofs[2][9:0] <= cpu_din[9:0];
-            'h94: x_ofs[2][9:0] <= cpu_din[9:0];
-
-            'h98: control[0] <= cpu_din[7:0];
-            'h9a: control[1] <= cpu_din[7:0];
-            'h9c: control[2] <= cpu_din[7:0];
+            'h8a: control[0] <= cpu_din[7:0];
+            'h8c: control[1] <= cpu_din[7:0];
 
             'h9e: hint_line[9:0] <= cpu_din[9:0];
             endcase
@@ -299,11 +286,9 @@ always_ff @(posedge clk) begin
         if (hcnt == 10'd104 && ~paused) begin // end of hblank
             control_save_0[vcnt] <= { y_ofs[0], x_ofs[0], control[0], rowscroll[0] };
             control_save_1[vcnt] <= { y_ofs[1], x_ofs[1], control[1], rowscroll[1] };
-            control_save_2[vcnt] <= { y_ofs[2], x_ofs[2], control[2], rowscroll[2] };
         end else if (paused) begin
             control_restore[0] <= control_save_0[vcnt];
             control_restore[1] <= control_save_1[vcnt];
-            control_restore[2] <= control_save_2[vcnt];
         end
     end
 end
@@ -313,7 +298,7 @@ end
 //// LAYERS
 generate
 	genvar i;
-    for(i = 0; i < 3; i = i + 1 ) begin : generate_layer
+    for(i = 0; i < 2; i = i + 1 ) begin : generate_layer
         wire [9:0] _y_ofs = paused ? control_restore[i][37:28] : y_ofs[i];
         wire [9:0] _x_ofs = paused ? control_restore[i][27:18] : x_ofs[i];
         wire [7:0] _control = paused ? control_restore[i][17:10] : control[i];

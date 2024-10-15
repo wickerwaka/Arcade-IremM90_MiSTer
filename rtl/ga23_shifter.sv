@@ -25,16 +25,16 @@ module ga23_shifter(
     input load,
     input reverse,
     input [31:0] row,
-    input [6:0] palette,
+    input [3:0] palette,
     input [1:0] prio,
 
-    output [10:0] color_out,
+    output [7:0] color_out,
     output [1:0] prio_out
 );
 
 reg [2:0] cnt;
 reg [31:0] pix_next, pix_cur;
-reg [6:0] pal_next, pal_cur;
+reg [3:0] pal_next, pal_cur;
 reg [1:0] prio_next, prio_cur;
 wire [2:0] flip_cnt = cnt + offset;
 

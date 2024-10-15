@@ -115,7 +115,7 @@ module m90 (
 
 assign ioctl_upload_index = 8'd1;
 
-wire [15:0] rgb_color;
+wire [15:0] rgb_color = palram_dout;
 assign R = { rgb_color[4:0], rgb_color[4:2] };
 assign G = { rgb_color[9:5], rgb_color[9:7] };
 assign B = { rgb_color[14:10], rgb_color[14:12] };
@@ -388,6 +388,7 @@ singleport_ram #(.widthad(11), .width(16), .name("PALRAM")) palram(
     .wren(MWR & palram_memrq),
     .data(cpu_mem_out)
 );
+
 
 
 GA25 ga25(

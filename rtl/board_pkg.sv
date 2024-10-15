@@ -35,8 +35,8 @@ package board_pkg;
 
     parameter region_t LOAD_REGIONS[5] = '{
         REGION_CPU_ROM,
-        REGION_SOUND_CPU,
         REGION_GFX,
+        REGION_SOUND_CPU,
         REGION_SOUND_SAMPLES,
         REGION_CRYPT
     };
