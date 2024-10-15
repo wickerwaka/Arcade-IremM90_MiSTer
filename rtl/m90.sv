@@ -270,14 +270,11 @@ wire rom0_ce, rom1_ce, ram_cs2;
 reg [3:0] bank_select = 4'd0;
 
 
-wire [7:0] switches_p1 = board_cfg.kick_harness ? { p1_input[4], p1_input[5], p1_input[6], 1'b0,             p1_input[3], p1_input[2], p1_input[1], p1_input[0] }
-                                                : { p1_input[4], p1_input[5], 1'b0,        1'b0,             p1_input[3], p1_input[2], p1_input[1], p1_input[0] };
-wire [7:0] switches_p2 = board_cfg.kick_harness ? { p2_input[4], p2_input[5], p2_input[6], 1'b0,             p2_input[3], p2_input[2], p2_input[1], p2_input[0] }
-                                                : { p2_input[4], p2_input[5], 1'b0,        1'b0,             p2_input[3], p2_input[2], p2_input[1], p2_input[0] };
-wire [7:0] switches_p3 = board_cfg.kick_harness ? { 1'b0,        1'b0,        1'b0,        1'b0,             1'b0,        1'b0,        1'b0,        1'b0        }
-                                                : { p3_input[4], p3_input[5], coin[2],     start_buttons[2], p3_input[3], p3_input[2], p3_input[1], p3_input[0] };
-wire [7:0] switches_p4 = board_cfg.kick_harness ? { p2_input[9], p2_input[8], p2_input[7], 1'b0,             p1_input[9], p1_input[8], p1_input[7], 1'b0        }
-                                                : { p4_input[4], p4_input[5], coin[3],     start_buttons[3], p4_input[3], p4_input[2], p4_input[1], p4_input[0] };
+// TODO - needs to be adjusted
+wire [7:0] switches_p1 = { p1_input[4], p1_input[5], p1_input[6], p1_input[7],      p1_input[3], p1_input[2], p1_input[1], p1_input[0] };
+wire [7:0] switches_p2 = { p2_input[4], p2_input[5], p2_input[6], p2_input[7],      p2_input[3], p2_input[2], p2_input[1], p2_input[0] };
+wire [7:0] switches_p3 = { p3_input[4], p3_input[5], coin[2],     start_buttons[2], p3_input[3], p3_input[2], p3_input[1], p3_input[0] };
+wire [7:0] switches_p4 = { p4_input[4], p4_input[5], coin[3],     start_buttons[3], p4_input[3], p4_input[2], p4_input[1], p4_input[0] };
 
 wire [15:0] switches_p1_p2 = { ~switches_p2, ~switches_p1 };
 wire [15:0] switches_p3_p4 = { ~switches_p4, ~switches_p3 };
@@ -338,7 +335,7 @@ V33 v35(
 
     // Pins
     .n_reset(reset_n),
-    .ready(~ga25_busy), // TODO
+    .ready(~ga25_busy),
     .n_poll(1),
 
     .n_ube(cpu_n_ube),
@@ -347,6 +344,7 @@ V33 v35(
     .n_mstb(cpu_n_mstb),
     .n_mreq(cpu_n_mreq),
 
+    .n_intak(cpu_n_intak),
     .intreq(0),
     .nmi(0),
 

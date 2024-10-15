@@ -108,7 +108,7 @@ always_ff @(posedge clk) begin
                     rq_index <= i;
                     rq_active <= 1;
                     sdr_req <= 1;
-                    sdr_addr <= REGION_GA20.base_addr[24:0] + { entry[i].addr64, 3'b000 };
+                    sdr_addr <= REGION_SOUND_SAMPLES.base_addr[24:0] + { entry[i].addr64, 3'b000 };
                     rq <= ~rq;
                     entry[i].state <= PENDING_ACK;
                 end

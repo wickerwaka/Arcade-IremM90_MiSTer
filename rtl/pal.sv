@@ -61,7 +61,7 @@ always_comb begin
 	20'b1110_xxxx_xxxx_xxxx_xxxx: palram_memrq = 1;
 	default: begin
 		cpu_rom_memrq = 1;
-		rom_addr = { 1'h0, A[18:0] };
+		rom_addr = board_cfg.rom_2mbit ? { 2'h0, A[17:0] } : { 1'h0, A[18:0] };
 	end
 	endcase
 end

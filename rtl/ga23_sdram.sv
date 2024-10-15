@@ -62,17 +62,17 @@ always @(posedge clk) begin
 
     if (req_a & ~req_a_2) begin
         req_a_2 <= 1;
-        addr_a_2 <= REGION_TILE.base_addr[24:0] | addr_a;
+        addr_a_2 <= REGION_GFX.base_addr[24:0] | addr_a;
     end
 
     if (req_b & ~req_b_2) begin
         req_b_2 <= 1;
-        addr_b_2 <= REGION_TILE.base_addr[24:0] | addr_b;
+        addr_b_2 <= REGION_GFX.base_addr[24:0] | addr_b;
     end
 
     if (req_c & ~req_c_2) begin
         req_c_2 <= 1;
-        addr_c_2 <= REGION_TILE.base_addr[24:0] | addr_c;
+        addr_c_2 <= REGION_GFX.base_addr[24:0] | addr_c;
     end
 
     if (active) begin

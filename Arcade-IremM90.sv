@@ -249,7 +249,7 @@ localparam CONF_STR = {
     "P2O[67],Solid Sprites,Off,On;",
     "-;",
     "T[0],Reset;",
-    "DEFMRA,/_Arcade/m90.mra;",
+    "DEFMRA,/_Arcade/m90_test.mra;",
     "V,v",`BUILD_DATE 
 };
 

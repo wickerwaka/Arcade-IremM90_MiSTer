@@ -42,7 +42,10 @@ package board_pkg;
     };
 
     typedef struct packed {
-        bit       debug_board;
+        bit unused0;
+        bit unused1;
+        bit unused2;
+        bit rom_2mbit;
         bit [3:0] bank_mask;
     } board_cfg_t;
 endpackage
