@@ -187,26 +187,15 @@ wire palram_memrq;
 wire [7:0] snd_latch_dout;
 wire snd_latch_rdy;
 
-reg [15:0] cpu_cycle_timer;
 reg [15:0] deferred_ce;
-reg ce_toggle;
-reg ce_1, ce_2;
 wire ga25_busy;
 wire cpu_rom_ready;
 
-wire ce_1_cpu = ce_1 & cpu_rom_ready;
-wire ce_2_cpu = ce_2 & cpu_rom_ready;
 
 always @(posedge clk_sys) begin
     if (!reset_n) begin
-        ce_1 <= 0;
-        ce_2 <= 0;
-        ce_toggle <= 0;
         deferred_ce <= 16'd0;
     end else begin
-        ce_1 <= 0;
-        ce_2 <= 0;
-
         if (ce_18m) begin
             if (~cpu_rom_ready) begin
                 deferred_ce <= deferred_ce + 16'd1;
@@ -214,18 +203,10 @@ always @(posedge clk_sys) begin
                 deferred_ce <= deferred_ce - 16'd1;
             end
         end
-
-        if (~paused & (ce_18m | cpu_turbo | (cpu_rom_ready & |deferred_ce))) begin
-            ce_toggle <= ~ce_toggle;
-            ce_1 <= ce_toggle;
-            ce_2 <= ~ce_toggle;
-        end
     end
 end
 
-always @(posedge clk_sys) begin
-    if (ce_1_cpu) cpu_cycle_timer <= cpu_cycle_timer + 16'd1;
-end
+wire ce_cpu = ~paused & cpu_rom_ready & (ce_18m | cpu_turbo | |deferred_ce);
 
 wire hs_access = hs_read | hs_write;
 assign hs_dout = hs_address[0] ? cpu_ram_dout[15:8] : cpu_ram_dout[7:0];
@@ -248,8 +229,7 @@ singleport_ram #(.widthad(15), .width(8), .name("CPU1")) cpu_ram_1(
 
 rom_cache rom_cache(
     .clk(clk_sys),
-    .ce_1(ce_1),
-    .ce_2(ce_2),
+    .ce(1),
     .reset(~reset_n),
 
     .clk_ram(clk_ram),
@@ -330,8 +310,7 @@ wire [7:0] int_vector;
 
 V33 v35(
     .clk(clk_sys),
-    .ce_1(ce_1_cpu),
-    .ce_2(ce_2_cpu),
+    .ce(ce_cpu),
 
     // Pins
     .n_reset(reset_n),

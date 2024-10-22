@@ -2,8 +2,7 @@ import board_pkg::*;
 
 module rom_cache(
     input clk,
-    input ce_1,
-    input ce_2,
+    input ce,
     input reset,
 
     input clk_ram,
@@ -55,10 +54,10 @@ always_ff @(posedge clk) begin
         rom_ready <= 1;
         state <= IDLE;
         if (~prev_reset) version <= version + 2'd1;
-    end else if (ce_1 | ce_2) begin
-        if (ce_1 && read && state == IDLE) begin
+    end else if (ce) begin
+        if (read && state == IDLE) begin
             state <= CACHE_CHECK;
-        end else if (ce_2 && state == CACHE_CHECK) begin
+        end else if (state == CACHE_CHECK) begin
             if (cached_tag == tag) begin
                 state <= IDLE;
                 rom_ready <= 1;
@@ -68,7 +67,7 @@ always_ff @(posedge clk) begin
                 rom_ready <= 0;
                 state <= SDR_WAIT;
             end
-        end else if (ce_2 && state == SDR_WAIT) begin
+        end else if (state == SDR_WAIT) begin
             if (read_req == read_ack) begin
                 cache_tag[index] <= tag;
                 rom_ready <= 1;

@@ -270,11 +270,11 @@ always_ff @(posedge clk) begin
 
         if (io_wr) begin
             case(addr[7:0])
-            'h80: x_ofs[0][9:0] <= cpu_din[9:0];
-            'h82: y_ofs[0][9:0] <= cpu_din[9:0];
+            'h80: y_ofs[0][9:0] <= cpu_din[9:0];
+            'h82: x_ofs[0][9:0] <= cpu_din[9:0];
             
-            'h84: x_ofs[1][9:0] <= cpu_din[9:0];
-            'h86: y_ofs[1][9:0] <= cpu_din[9:0];
+            'h84: y_ofs[1][9:0] <= cpu_din[9:0];
+            'h86: x_ofs[1][9:0] <= cpu_din[9:0];
             
             'h8a: control[0] <= cpu_din[7:0];
             'h8c: control[1] <= cpu_din[7:0];
