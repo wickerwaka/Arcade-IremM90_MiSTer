@@ -327,7 +327,7 @@ V33 v35(
     .intreq(0),
     .nmi(0),
 
-    .n_intp0(1),
+    .n_intp0(vblank),
     .n_intp1(1),
     .n_intp2(1),
 
@@ -335,7 +335,12 @@ V33 v35(
     .dout(cpu_mem_out),
     .din(cpu_mem_in),
 
-    .turbo(cpu_turbo)
+    .turbo(cpu_turbo),
+
+    .secure(board_cfg.secure),
+    .secure_wr(bram_wr & bram_cs[0]),
+    .secure_addr(bram_addr[7:0]),
+    .secure_byte(bram_data[7:0])
 );
 
 address_translator address_translator(

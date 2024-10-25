@@ -42,7 +42,7 @@ package board_pkg;
     };
 
     typedef struct packed {
-        bit unused0;
+        bit secure;
         bit unused1;
         bit unused2;
         bit rom_2mbit;
