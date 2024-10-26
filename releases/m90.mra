@@ -26,7 +26,7 @@
 
     <rom index="0" zip="dynablst.zip" md5="None">
         <!-- board type -->
-        <part>00</part>
+        <part>90</part> <!-- secure, 2mbit -->
 
         <!-- maincpu -->
         <part>00 04 00 00</part>

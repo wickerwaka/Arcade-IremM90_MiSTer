@@ -170,7 +170,7 @@ wire cpu_n_ube, cpu_r_w, cpu_n_iostb;
 wire IOWR = ~cpu_n_iostb & ~cpu_r_w; // IO Write
 wire IORD = ~cpu_n_iostb & cpu_r_w; // IO Read
 wire MWR = ~cpu_n_mreq & ~cpu_n_mstb & ~cpu_r_w; // Mem Write
-wire MRD = ~cpu_n_mreq & cpu_r_w; // Mem Read
+wire MRD = ~cpu_n_mreq & cpu_n_iostb & cpu_r_w; // Mem Read
 
 wire INTACK = ~cpu_n_intak;
 
@@ -259,16 +259,9 @@ wire [7:0] switches_p4 = { p4_input[4], p4_input[5], coin[3],     start_buttons[
 wire [15:0] switches_p1_p2 = { ~switches_p2, ~switches_p1 };
 wire [15:0] switches_p3_p4 = { ~switches_p4, ~switches_p3 };
 
-wire [15:0] flags = { ~dip_sw[23:16], ~dma_busy, 1'b1, 1'b1 /*TEST*/, 1'b1 /*R*/, ~coin[1:0], ~start_buttons[1:0] };
+wire [15:0] flags = { 8'h00, 1'b0, 1'b1, 1'b1 /*TEST*/, 1'b1 /*R*/, ~coin[1:0], ~start_buttons[1:0] };
 
-reg [7:0] sys_flags = 0;
-wire COIN0 = sys_flags[0];
-wire COIN1 = sys_flags[1];
-wire SOFT_NL = ~sys_flags[2];
-wire CBLK = sys_flags[3];
-wire BRQ = ~sys_flags[4];
-wire BANK = sys_flags[5];
-wire NL = SOFT_NL ^ ~dip_sw[8];
+wire NL = ~dip_sw[8];
 
 reg sound_reset = 0;
 
